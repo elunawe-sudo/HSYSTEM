@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HSYSTEM — Control de cuentas de streaming</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --fondo:#12101F; --sup:#1B1830; --carta:#221E3B; --borde:#332E55; --borde2:#463F72;
+    --texto:#F3F0FF; --suave:#A39CC8;
+    --uva:#7C3AED; --rosa:#EC4899; --cian:#22D3EE;
+    --verde:#34D399; --ambar:#FBBF24; --naranja:#FB923C; --rojo:#FB7185;
+    --grad:linear-gradient(120deg,#7C3AED 0%,#EC4899 55%,#F59E0B 100%);
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--fondo);color:var(--texto);font-family:"Public Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,.display{font-family:"Outfit","Public Sans",sans-serif;letter-spacing:-.02em}
+  .num{font-variant-numeric:tabular-nums}
+  button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  input,select,textarea{font-family:inherit;font-size:inherit}
+  :focus-visible{outline:2px solid var(--cian);outline-offset:2px}
+  .oculto{display:none !important}
+
+  /* ---------- login ---------- */
+  #pantallaLogin{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:22px;position:relative;overflow:hidden}
+  #pantallaLogin::before,#pantallaLogin::after{content:"";position:absolute;border-radius:50%;filter:blur(70px);opacity:.5;pointer-events:none}
+  #pantallaLogin::before{width:420px;height:420px;background:#7C3AED;top:-130px;left:-110px}
+  #pantallaLogin::after{width:380px;height:380px;background:#EC4899;bottom:-140px;right:-90px}
+  .tarjeta-login{position:relative;z-index:2;width:100%;max-width:390px;background:var(--sup);border:1px solid var(--borde);border-radius:22px;padding:30px 26px}
+  .escudo{width:56px;height:56px;border-radius:16px;background:var(--grad);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+  .escudo svg{width:26px;height:26px}
+  .tarjeta-login h1{font-size:27px;margin:0 0 4px}
+  .tarjeta-login .lema{color:var(--suave);font-size:14px;margin:0 0 22px}
+  .error-login{background:rgba(251,113,133,.12);border:1px solid #6B2B3C;color:#FFC9D2;border-radius:10px;padding:9px 13px;font-size:13.5px;margin-bottom:14px}
+  .pista-login{margin-top:16px;font-size:12.5px;color:var(--suave);text-align:center;line-height:1.5}
+
+  /* ---------- estructura ---------- */
+  .barra-sup{position:sticky;top:0;z-index:30;background:rgba(18,16,31,.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--borde)}
+  .barra-int{max-width:1220px;margin:0 auto;padding:11px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .logo{display:flex;align-items:center;gap:10px}
+  .logo .marca{width:36px;height:36px;border-radius:11px;background:var(--grad);display:flex;align-items:center;justify-content:center;flex:none}
+  .logo .marca svg{width:18px;height:18px}
+  .logo b{font-family:"Outfit";font-size:19px;letter-spacing:.01em}
+  .logo small{display:block;font-size:11px;color:var(--suave);line-height:1;margin-top:1px}
+  .menu{display:flex;gap:4px;overflow-x:auto;flex:1;min-width:0}
+  .menu button{padding:9px 15px;border-radius:10px;font-weight:600;font-size:14px;color:var(--suave);white-space:nowrap}
+  .menu button:hover{color:var(--texto);background:var(--sup)}
+  .menu button[aria-current="page"]{background:var(--carta);color:var(--texto);box-shadow:inset 0 0 0 1px var(--borde2)}
+  .usuario-chip{display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--suave)}
+  .avatar{width:30px;height:30px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-family:"Outfit";font-weight:700;font-size:13px;color:#fff}
+
+  .envoltura{max-width:1220px;margin:0 auto;padding:24px 20px 70px}
+  .vista{display:none}
+  .vista.activa{display:block}
+  .cabeza{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+  .cabeza h2{font-size:24px;margin:0}
+  .cabeza p{margin:2px 0 0;color:var(--suave);font-size:14px}
+
+  /* ---------- botones ---------- */
+  .btn{padding:10px 17px;border-radius:11px;font-weight:600;border:1px solid var(--borde2);background:var(--carta);color:var(--texto)}
+  .btn:hover{border-color:#5B5290}
+  .btn-grad{background:var(--grad);border:none;color:#fff;font-weight:700}
+  .btn-grad:hover{filter:brightness(1.08)}
+  .btn-ancho{width:100%;padding:13px;font-size:15px;text-align:center}
+  .btn-mini{padding:6px 11px;border-radius:9px;font-size:13px;font-weight:600;border:1px solid var(--borde);background:var(--sup)}
+  .btn-mini:hover{border-color:var(--borde2)}
+  .btn-mini.peligro{color:var(--rojo)}
+  .btn-mini.wa{color:#0B1F19;background:var(--verde);border-color:var(--verde);font-weight:700}
+
+  /* ---------- tarjetas resumen ---------- */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:13px;margin-bottom:22px}
+  .kpi{background:var(--carta);border:1px solid var(--borde);border-radius:var(--r);padding:15px 16px;position:relative;overflow:hidden}
+  .kpi::after{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:var(--uva)}
+  .kpi.v::after{background:var(--verde)} .kpi.a::after{background:var(--ambar)}
+  .kpi.n::after{background:var(--naranja)} .kpi.r::after{background:var(--rojo)}
+  .kpi .rot{font-size:12.5px;color:var(--suave);display:block;margin-bottom:3px}
+  .kpi .cif{font-family:"Outfit";font-size:29px;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums}
+  .kpi .pie{font-size:12px;color:var(--suave);margin-top:3px}
+
+  .panel{background:var(--carta);border:1px solid var(--borde);border-radius:var(--r);padding:17px 18px;margin-bottom:16px}
+  .panel h3{margin:0 0 12px;font-size:16px}
+  .dos-col{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;align-items:start}
+
+  .barra-prod{display:flex;align-items:center;gap:10px;margin-bottom:9px;font-size:13.5px}
+  .barra-prod .nom{width:132px;flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .barra-prod .pista{flex:1;height:9px;border-radius:5px;background:var(--sup);overflow:hidden}
+  .barra-prod .pista i{display:block;height:100%;border-radius:5px}
+  .barra-prod .val{width:52px;text-align:right;color:var(--suave);flex:none}
+
+  .aviso{display:flex;gap:12px;align-items:flex-start;border-radius:12px;padding:13px 16px;margin-bottom:14px;font-size:14px}
+  .aviso.amb{background:rgba(251,191,36,.10);border:1px solid #6B5518;border-left:4px solid var(--ambar)}
+  .aviso.roj{background:rgba(251,113,133,.10);border:1px solid #6B2B3C;border-left:4px solid var(--rojo)}
+  .aviso b{display:block;font-family:"Outfit";font-size:15px;margin-bottom:2px}
+
+  /* ---------- filtros ---------- */
+  .filtros{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+  .filtros input[type=search],.filtros select{padding:10px 13px;border-radius:11px;background:var(--carta);border:1px solid var(--borde);color:var(--texto)}
+  .filtros input[type=search]{flex:1;min-width:190px}
+  .filtros input:focus,.filtros select:focus{outline:none;border-color:var(--uva)}
+  .pastillas{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
+  .pastilla{padding:7px 14px;border-radius:999px;font-size:13.5px;font-weight:600;background:var(--carta);border:1px solid var(--borde);color:var(--suave);display:inline-flex;align-items:center;gap:7px}
+  .pastilla:hover{color:var(--texto)}
+  .pastilla[aria-pressed="true"]{background:var(--texto);color:var(--fondo);border-color:var(--texto)}
+  .punto{width:8px;height:8px;border-radius:50%;flex:none}
+
+  /* ---------- ficha de cliente ---------- */
+  .lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+  .cliente{background:var(--carta);border:1px solid var(--borde);border-radius:16px;padding:15px 16px;display:flex;flex-direction:column;gap:11px}
+  .cliente.est-porvencer{border-color:#6B5518}
+  .cliente.est-vencehoy{border-color:#71431C}
+  .cliente.est-vencida{border-color:#6B2B3C}
+  .cli-top{display:flex;gap:12px;align-items:flex-start}
+  .logo-prod{width:44px;height:44px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;font-family:"Outfit";font-weight:700;font-size:15px;color:#fff;overflow:hidden}
+  .logo-prod img{width:100%;height:100%;object-fit:cover;display:block}
+  .zona-logo{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .vista-logo{width:58px;height:58px;border-radius:14px;flex:none;display:flex;align-items:center;justify-content:center;font-family:"Outfit";font-weight:700;font-size:17px;color:#fff;overflow:hidden;border:1px solid var(--borde2)}
+  .vista-logo img{width:100%;height:100%;object-fit:cover;display:block}
+  .cli-id{font-size:12px;color:var(--suave);font-variant-numeric:tabular-nums}
+  .cli-nombre{font-family:"Outfit";font-weight:600;font-size:16.5px;line-height:1.25;margin:1px 0 3px}
+  .cli-prod{font-size:13px;color:var(--suave)}
+  .cuenta-atras{text-align:right;flex:none;margin-left:auto}
+  .cuenta-atras .d{font-family:"Outfit";font-size:30px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;display:block}
+  .cuenta-atras .t{font-size:11px;color:var(--suave);display:block;margin-top:2px}
+  .est-activa .d{color:var(--verde)} .est-porvencer .d{color:var(--ambar)}
+  .est-vencehoy .d{color:var(--naranja)} .est-vencida .d{color:var(--rojo)}
+
+  .progreso{height:8px;border-radius:5px;background:var(--sup);overflow:hidden}
+  .progreso i{display:block;height:100%;border-radius:5px;transition:width .3s}
+  .est-activa .progreso i{background:linear-gradient(90deg,#34D399,#22D3EE)}
+  .est-porvencer .progreso i{background:linear-gradient(90deg,#FBBF24,#F59E0B)}
+  .est-vencehoy .progreso i{background:linear-gradient(90deg,#FB923C,#F97316)}
+  .est-vencida .progreso i{background:var(--rojo)}
+  .fechas{display:flex;justify-content:space-between;font-size:12.5px;color:var(--suave)}
+
+  .credenciales{background:var(--sup);border:1px solid var(--borde);border-radius:11px;padding:10px 12px;font-size:13px;display:grid;gap:5px}
+  .cred-fila{display:flex;gap:8px;align-items:center}
+  .cred-fila span.et{color:var(--suave);width:56px;flex:none;font-size:12px}
+  .cred-fila code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cred-fila button{padding:3px 8px;border-radius:7px;font-size:11.5px;border:1px solid var(--borde2);color:var(--suave)}
+  .cred-fila button:hover{color:var(--texto)}
+  .acciones{display:flex;gap:7px;flex-wrap:wrap}
+
+  /* ---------- formularios ---------- */
+  .rejilla{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .campo{display:flex;flex-direction:column;gap:6px}
+  .campo.ancho{grid-column:1 / -1}
+  .campo label{font-size:13px;font-weight:600}
+  .campo .ayuda{font-weight:400;color:var(--suave);font-size:12px}
+  .campo input,.campo select,.campo textarea{padding:11px 13px;border-radius:11px;background:var(--sup);border:1px solid var(--borde);color:var(--texto);width:100%}
+  .campo input:focus,.campo select:focus,.campo textarea:focus{outline:none;border-color:var(--uva);box-shadow:0 0 0 3px rgba(124,58,237,.22)}
+  .campo input[readonly]{background:var(--carta);color:var(--suave)}
+  .campo input[type=color]{padding:4px;height:44px;cursor:pointer}
+  .campo .malo{font-size:12.5px;color:var(--rojo);font-weight:600;display:none}
+  .campo.error input,.campo.error select{border-color:var(--rojo)}
+  .campo.error .malo{display:block}
+  .previa{grid-column:1 / -1;background:var(--sup);border:1px solid var(--borde2);border-radius:12px;padding:13px 15px;display:flex;gap:18px;flex-wrap:wrap;align-items:center}
+  .previa div{font-size:12.5px;color:var(--suave)}
+  .previa b{display:block;font-family:"Outfit";font-size:16px;color:var(--texto);margin-top:1px}
+  .acciones-form{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:20px}
+
+  /* ---------- config ---------- */
+  .pestanas{display:flex;gap:5px;overflow-x:auto;border-bottom:1px solid var(--borde);margin-bottom:18px}
+  .pestana{padding:10px 15px;font-weight:600;font-size:14px;color:var(--suave);border-bottom:2px solid transparent;white-space:nowrap}
+  .pestana[aria-selected="true"]{color:var(--texto);border-bottom-color:var(--rosa)}
+  .hoja{display:none} .hoja.activa{display:block}
+  .fila{display:flex;gap:10px;align-items:center;padding:10px 13px;border-bottom:1px solid var(--borde)}
+  .fila:last-child{border-bottom:none}
+  .fila .nom{flex:1;min-width:0;font-size:14px}
+  .fila .nom small{display:block;color:var(--suave);font-size:12.5px}
+  .caja-lista{border:1px solid var(--borde);border-radius:13px;overflow:hidden;max-height:330px;overflow-y:auto;margin-bottom:14px}
+  .nota{background:var(--sup);border:1px solid var(--borde);border-left:4px solid var(--cian);border-radius:11px;padding:12px 15px;font-size:13.5px;color:var(--suave);grid-column:1 / -1}
+
+  .vacio{background:var(--carta);border:1px dashed var(--borde2);border-radius:16px;padding:46px 24px;text-align:center;color:var(--suave)}
+  .vacio h3{margin:0 0 6px;color:var(--texto);font-size:18px}
+
+  .pie-sistema{border-top:1px solid var(--borde);margin-top:34px;padding:20px;text-align:center;color:var(--suave);font-size:13px}
+  .pie-sistema b{color:var(--texto)}
+
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--texto);color:var(--fondo);padding:11px 19px;border-radius:11px;font-weight:600;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:90}
+  .toast.ver{opacity:1}
+
+  @media (max-width:780px){
+    .dos-col{grid-template-columns:1fr}
+    .rejilla{grid-template-columns:1fr}
+    .lista{grid-template-columns:1fr}
+    .barra-int{gap:10px}
+    .usuario-chip span.nombre{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div id="pantallaLogin">
+  <div class="tarjeta-login">
+    <div class="escudo">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 5.5v13l11-6.5-11-6.5z" fill="#fff"/></svg>
+    </div>
+    <h1 id="loginTitulo">HSYSTEM</h1>
+    <p class="lema">Control de cuentas de streaming</p>
+    <div class="error-login oculto" id="errorLogin"></div>
+    <div class="rejilla" style="grid-template-columns:1fr">
+      <div class="campo">
+        <label for="inUsuario">Usuario</label>
+        <input id="inUsuario" type="text" autocomplete="username" placeholder="admin">
+      </div>
+      <div class="campo">
+        <label for="inClave">Contraseña</label>
+        <input id="inClave" type="password" autocomplete="current-password" placeholder="••••••••">
+      </div>
+    </div>
+    <div style="margin-top:18px"><button class="btn btn-grad btn-ancho" id="btnEntrar">Ingresar</button></div>
+    <p class="pista-login" id="pistaLogin">Primer ingreso: usuario <b>admin</b> · contraseña <b>hsystem</b><br>Cámbialos apenas entres, en Configuración.</p>
+  </div>
+</div>
+
+<!-- ================= APLICACIÓN ================= -->
+<div id="app" class="oculto">
+
+  <header class="barra-sup">
+    <div class="barra-int">
+      <div class="logo">
+        <span class="marca"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5-11-6.5z" fill="#fff"/></svg></span>
+        <span><b id="marcaNombre">HSYSTEM</b><small id="marcaLema">Control de cuentas</small></span>
+      </div>
+      <nav class="menu" id="menu">
+        <button data-vista="vPanel" aria-current="page">Panel de ventas</button>
+        <button data-vista="vClientes">Clientes</button>
+        <button data-vista="vNuevo">Agregar cliente</button>
+        <button data-vista="vConfig">Configuración</button>
+      </nav>
+      <div class="usuario-chip">
+        <span class="avatar" id="avatar">A</span>
+        <span class="nombre" id="nombreUsuario">admin</span>
+        <button class="btn-mini" id="btnSalir">Salir</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="envoltura">
+
+    <!-- ---------- PANEL DE VENTAS ---------- -->
+    <section class="vista activa" id="vPanel">
+      <div class="cabeza">
+        <div><h2>Panel de ventas</h2><p id="fechaHoy"></p></div>
+        <button class="btn btn-grad" data-ir="vNuevo">+ Agregar cliente</button>
+      </div>
+
+      <div id="avisosPanel"></div>
+
+      <div class="kpis" id="kpis"></div>
+
+      <div class="dos-col">
+        <div class="panel">
+          <h3>Próximas renovaciones</h3>
+          <div id="proximos"></div>
+        </div>
+        <div class="panel">
+          <h3>Cuentas por producto</h3>
+          <div id="porProducto"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Ingresos de los últimos 6 meses</h3>
+        <div id="porMes"></div>
+        <p style="margin:10px 0 0;font-size:12.5px;color:var(--suave)">Se cuenta el precio de cada cuenta en el mes en que se activó o se renovó.</p>
+      </div>
+    </section>
+
+    <!-- ---------- CLIENTES ---------- -->
+    <section class="vista" id="vClientes">
+      <div class="cabeza">
+        <div><h2>Clientes</h2><p id="conteoClientes"></p></div>
+        <div style="display:flex;gap:9px;flex-wrap:wrap">
+          <button class="btn" id="btnCSV">Exportar Excel (CSV)</button>
+          <button class="btn btn-grad" data-ir="vNuevo">+ Agregar cliente</button>
+        </div>
+      </div>
+
+      <div class="filtros">
+        <input type="search" id="buscar" placeholder="Buscar por nombre, ID, celular o correo" aria-label="Buscar cliente">
+        <select id="filtroProducto" aria-label="Filtrar por producto"><option value="">Todos los productos</option></select>
+        <select id="orden" aria-label="Ordenar">
+          <option value="dias">Los que vencen primero</option>
+          <option value="nombre">Nombre A–Z</option>
+          <option value="reciente">Registro más reciente</option>
+        </select>
+      </div>
+      <div class="pastillas" id="pastillas"></div>
+      <div class="lista" id="listaClientes"></div>
+    </section>
+
+    <!-- ---------- NUEVO / EDITAR ---------- -->
+    <section class="vista" id="vNuevo">
+      <div class="cabeza">
+        <div><h2 id="tituloForm">Agregar cliente</h2><p>La fecha de término y el contador de días se calculan solos.</p></div>
+      </div>
+
+      <div class="panel">
+        <div class="rejilla">
+          <div class="campo" id="c-codigo">
+            <label for="fCodigo">Número de ID</label>
+            <input id="fCodigo" type="text" autocomplete="off" placeholder="HS-0001">
+            <span class="malo">Escribe un número de ID.</span>
+          </div>
+          <div class="campo" id="c-nombre">
+            <label for="fNombre">Apellidos y nombres</label>
+            <input id="fNombre" type="text" autocomplete="off" placeholder="Quispe Ramos, Ana María">
+            <span class="malo">Escribe los apellidos y nombres.</span>
+          </div>
+
+          <div class="campo" id="c-producto">
+            <label for="fProducto">Producto</label>
+            <select id="fProducto"></select>
+            <span class="malo">Elige el producto.</span>
+          </div>
+          <div class="campo">
+            <label for="fCelular">Celular <span class="ayuda">— para el aviso por WhatsApp</span></label>
+            <input id="fCelular" type="tel" inputmode="numeric" autocomplete="off" placeholder="987654321">
+          </div>
+
+          <div class="campo ancho"><label for="fEmail">Email de compra</label><input id="fEmail" type="text" autocomplete="off" placeholder="cuenta@correo.com"></div>
+          <div class="campo"><label for="fClave">Clave</label><input id="fClave" type="text" autocomplete="off" placeholder="Clave de la cuenta"></div>
+          <div class="campo"><label for="fPerfil">Perfil</label><input id="fPerfil" type="text" autocomplete="off" placeholder="Perfil 2"></div>
+          <div class="campo"><label for="fPin">PIN</label><input id="fPin" type="text" inputmode="numeric" autocomplete="off" placeholder="1234"></div>
+          <div class="campo"><label for="fPrecio">Precio cobrado</label><input id="fPrecio" type="number" step="0.10" placeholder="12.00"></div>
+
+          <div class="campo" id="c-inicio">
+            <label for="fInicio">Fecha de inicio</label>
+            <input id="fInicio" type="date">
+            <span class="malo">Elige la fecha de inicio.</span>
+          </div>
+          <div class="campo">
+            <label for="fDias">Duración <span class="ayuda">— en días</span></label>
+            <input id="fDias" type="number" min="1" max="800" value="30">
+          </div>
+          <div class="campo ancho">
+            <label for="fTermino">Fecha de término <span class="ayuda">— automática</span></label>
+            <input id="fTermino" type="text" readonly>
+          </div>
+          <div class="campo ancho"><label for="fNota">Nota <span class="ayuda">— opcional</span></label><input id="fNota" type="text" autocomplete="off" placeholder="Pagó por Yape · pantalla para TV"></div>
+
+          <div class="previa" id="previa"></div>
+        </div>
+
+        <div class="acciones-form">
+          <button class="btn" id="btnCancelarForm">Cancelar</button>
+          <button class="btn btn-grad" id="btnGuardarCliente">Guardar cliente</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- CONFIGURACIÓN ---------- -->
+    <section class="vista" id="vConfig">
+      <div class="cabeza"><div><h2>Configuración</h2><p>Los cambios se aplican al instante.</p></div></div>
+
+      <div class="pestanas" role="tablist">
+        <button class="pestana" role="tab" data-hoja="hProductos" aria-selected="true">Productos</button>
+        <button class="pestana" role="tab" data-hoja="hPlataforma" aria-selected="false">Mi plataforma</button>
+        <button class="pestana" role="tab" data-hoja="hAvisos" aria-selected="false">Avisos y mensajes</button>
+        <button class="pestana" role="tab" data-hoja="hCuenta" aria-selected="false">Usuario y clave</button>
+        <button class="pestana" role="tab" data-hoja="hDatos" aria-selected="false">Respaldo</button>
+      </div>
+
+      <div class="hoja activa" id="hProductos">
+        <div class="panel">
+          <h3>Tipos de producto</h3>
+          <div class="caja-lista" id="listaProductos"></div>
+          <div class="rejilla">
+            <div class="campo ancho"><label for="pNombre">Nombre del producto</label><input id="pNombre" type="text" placeholder="Netflix Premium 4K"></div>
+            <div class="campo"><label for="pDias">Duración por defecto <span class="ayuda">— días</span></label><input id="pDias" type="number" min="1" value="30"></div>
+            <div class="campo"><label for="pPrecio">Precio sugerido</label><input id="pPrecio" type="number" step="0.10" placeholder="12.00"></div>
+            <div class="campo"><label for="pColor">Color <span class="ayuda">— se usa si no hay logo</span></label><input id="pColor" type="color" value="#7C3AED"></div>
+            <div class="campo ancho">
+              <label>Logo del producto <span class="ayuda">— PNG o JPG, se recorta cuadrado</span></label>
+              <div class="zona-logo">
+                <span class="vista-logo" id="vistaLogo"></span>
+                <button class="btn" id="btnSubirLogo" type="button">Subir logo</button>
+                <button class="btn" id="btnQuitarLogo" type="button">Quitar logo</button>
+              </div>
+            </div>
+            <div class="campo ancho" style="align-items:flex-end"><button class="btn btn-grad" id="btnGuardarProducto" style="width:auto">Agregar producto</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hoja" id="hPlataforma">
+        <div class="panel">
+          <h3>Datos de la plataforma</h3>
+          <div class="rejilla">
+            <div class="campo"><label for="cNombre">Nombre del sistema</label><input id="cNombre" data-cfg="plataforma" type="text"></div>
+            <div class="campo"><label for="cLema">Descripción corta</label><input id="cLema" data-cfg="lema" type="text"></div>
+            <div class="campo"><label for="cPropietario">Propietario <span class="ayuda">— tu nombre</span></label><input id="cPropietario" data-cfg="propietario" type="text"></div>
+            <div class="campo"><label for="cTelefono">Teléfono de contacto</label><input id="cTelefono" data-cfg="telefono" type="tel" inputmode="numeric"></div>
+            <div class="campo"><label for="cMoneda">Símbolo de moneda</label><input id="cMoneda" data-cfg="moneda" type="text" maxlength="4"></div>
+            <div class="campo"><label for="cPais">Código de país <span class="ayuda">— para WhatsApp</span></label><input id="cPais" data-cfg="pais" type="text" maxlength="4"></div>
+            <div class="campo ancho"><label for="cDerechos">Texto de derechos reservados</label><input id="cDerechos" data-cfg="derechos" type="text"></div>
+            <div class="nota">Así se ve al pie del sistema: <span id="vistaPie" style="color:var(--texto)"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hoja" id="hAvisos">
+        <div class="panel">
+          <h3>Aviso de renovación</h3>
+          <div class="rejilla">
+            <div class="campo"><label for="cAnticipacion">Avisar con <span class="ayuda">— días de anticipación</span></label><input id="cAnticipacion" data-cfg="anticipacion" type="number" min="1" max="15"></div>
+            <div class="campo"><label for="cDiasDefecto">Duración por defecto al registrar</label><input id="cDiasDefecto" data-cfg="diasDefecto" type="number" min="1" max="800"></div>
+            <div class="campo ancho"><label for="cMsgPorVencer">Mensaje cuando está por vencer</label><textarea id="cMsgPorVencer" data-cfg="msgPorVencer" rows="3"></textarea></div>
+            <div class="campo ancho"><label for="cMsgVencida">Mensaje cuando ya venció</label><textarea id="cMsgVencida" data-cfg="msgVencida" rows="3"></textarea></div>
+            <div class="nota">Puedes usar estas marcas dentro del mensaje: <b>{nombre}</b>, <b>{producto}</b>, <b>{dias}</b>, <b>{fecha}</b>, <b>{precio}</b>.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hoja" id="hCuenta">
+        <div class="panel">
+          <h3>Acceso al sistema</h3>
+          <div class="rejilla">
+            <div class="campo"><label for="cUsuario">Usuario</label><input id="cUsuario" type="text" autocomplete="off"></div>
+            <div class="campo"><label for="cClaveNueva">Contraseña nueva</label><input id="cClaveNueva" type="text" autocomplete="off" placeholder="Escribe la nueva clave"></div>
+            <div class="campo" style="justify-content:flex-end"><button class="btn btn-grad" id="btnGuardarAcceso">Guardar acceso</button></div>
+            <div class="nota">Este login sirve para que nadie use el sistema desde tu computadora. No es una seguridad de servidor: la clave se guarda en este navegador, así que no uses una que utilices en otros servicios.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hoja" id="hDatos">
+        <div class="panel">
+          <h3>Respaldo de la información</h3>
+          <div class="rejilla">
+            <div class="campo" style="justify-content:flex-end"><button class="btn" id="btnRespaldo">Descargar respaldo</button></div>
+            <div class="campo" style="justify-content:flex-end"><button class="btn" id="btnImportar">Importar respaldo</button></div>
+            <div class="campo" style="justify-content:flex-end"><button class="btn" id="btnEjemplos">Cargar clientes de ejemplo</button></div>
+            <div class="campo" style="justify-content:flex-end"><button class="btn" id="btnBorrarTodo" style="color:var(--rojo)">Borrar todos los datos</button></div>
+            <div class="nota" id="notaEspacio"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="pie-sistema" id="pieSistema"></footer>
+</div>
+
+<input type="file" id="archivo" accept="application/json" hidden>
+<input type="file" id="archivoLogo" accept="image/*" hidden>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var LLAVE = "hsystem-v1";
+  var DIA = 86400000;
+  var MESES = ["ene","feb","mar","abr","may","jun","jul","ago","set","oct","nov","dic"];
+
+  var cfgBase = {
+    plataforma:"HSYSTEM",
+    lema:"Control de cuentas",
+    propietario:"",
+    telefono:"",
+    derechos:"Todos los derechos reservados",
+    moneda:"S/",
+    pais:"51",
+    anticipacion:3,
+    diasDefecto:30,
+    usuario:"admin",
+    clave:"hsystem",
+    msgPorVencer:"Hola {nombre}, te recuerdo que tu cuenta de {producto} vence en {dias} ({fecha}). Avísame si la renovamos.",
+    msgVencida:"Hola {nombre}, tu cuenta de {producto} venció el {fecha}. Si deseas renovarla, avísame y la reactivo.",
+    productos:[
+      {id:"s1", nombre:"Netflix Premium 4K", dias:30, precio:12, color:"#E0243B"},
+      {id:"s2", nombre:"Disney+ Premium", dias:30, precio:8, color:"#1F4FA8"},
+      {id:"s3", nombre:"Max Platino", dias:30, precio:6, color:"#5B21B6"},
+      {id:"s4", nombre:"Prime Video", dias:30, precio:6, color:"#0F6480"},
+      {id:"s5", nombre:"Spotify Premium", dias:30, precio:9, color:"#116B3E"},
+      {id:"s6", nombre:"YouTube Premium", dias:30, precio:5, color:"#A02622"},
+      {id:"s7", nombre:"Paramount+", dias:30, precio:6, color:"#1554B5"},
+      {id:"s8", nombre:"Vix Premium", dias:30, precio:4, color:"#9C4A07"},
+      {id:"s9", nombre:"Crunchyroll", dias:30, precio:5, color:"#A85507"},
+      {id:"s10",nombre:"Canva Pro", dias:30, precio:6, color:"#0B6E7A"}
+    ]
+  };
+
+  var cfg = JSON.parse(JSON.stringify(cfgBase));
+  var clientes = [];
+  var filtroEstado = "", editandoId = null, logoTemp = "";
+
+  /* ---------- fechas ---------- */
+  function hoy(){ var d = new Date(); d.setHours(0,0,0,0); return d; }
+  function aISO(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+  function deISO(s){ var p = String(s).split("-"); return new Date(+p[0], +p[1]-1, +p[2]); }
+  function sumar(d,n){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()+n); }
+  function bonito(d){ return String(d.getDate()).padStart(2,"0")+" "+MESES[d.getMonth()]+" "+d.getFullYear(); }
+  function termino(c){ return sumar(deISO(c.inicio), Number(c.dias)); }
+  function restantes(c){ return Math.round((termino(c) - hoy())/DIA); }
+  function estado(d){
+    if(d < 0) return "vencida";
+    if(d === 0) return "vencehoy";
+    if(d <= Number(cfg.anticipacion)) return "porvencer";
+    return "activa";
+  }
+  var ROTULOS = {activa:"Activas", porvencer:"Por vencer", vencehoy:"Vencen hoy", vencida:"Vencidas"};
+  var COLORES = {activa:"#34D399", porvencer:"#FBBF24", vencehoy:"#FB923C", vencida:"#FB7185"};
+
+  /* ---------- utilidades ---------- */
+  function esc(t){ return String(t==null?"":t).replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m];}); }
+  function dinero(n){ return cfg.moneda+" "+Number(n||0).toFixed(2); }
+  function digitos(t){ return String(t||"").replace(/\D/g,""); }
+  function iniciales(t){
+    var p = String(t||"?").replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ0-9 ]/g,"").trim().split(/\s+/);
+    return (p[0]||"?").slice(0,1).toUpperCase() + (p[1]?p[1].slice(0,1).toUpperCase():"");
+  }
+  function tono(hex,a){
+    if(!/^#[0-9a-f]{6}$/i.test(hex)) return hex;
+    var n = parseInt(hex.slice(1),16);
+    return "rgb("+[Math.max(0,Math.min(255,(n>>16)+a)),Math.max(0,Math.min(255,((n>>8)&255)+a)),Math.max(0,Math.min(255,(n&255)+a))].join(",")+")";
+  }
+  function degradado(c){ return "linear-gradient(135deg,"+c+" 0%,"+tono(c,-40)+" 100%)"; }
+  function fondoProd(p){ return p.logo ? "background:#0F0D1C" : "background:"+degradado(p.color); }
+  function contenidoProd(p){ return p.logo ? "<img src='"+p.logo+"' alt=''>" : esc(iniciales(p.nombre)); }
+  function toast(t){
+    var e = document.getElementById("toast");
+    e.textContent = t; e.classList.add("ver");
+    clearTimeout(e._t); e._t = setTimeout(function(){ e.classList.remove("ver"); }, 2500);
+  }
+  function producto(id){
+    for(var i=0;i<cfg.productos.length;i++) if(cfg.productos[i].id===id) return cfg.productos[i];
+    return {id:"", nombre:"Sin producto", color:"#5C6A83", dias:30, precio:0};
+  }
+  function copiar(txt){
+    if(navigator.clipboard && window.isSecureContext){
+      navigator.clipboard.writeText(txt).then(function(){ toast("Copiado"); });
+    }else{
+      var a = document.createElement("textarea");
+      a.value = txt; a.style.position="fixed"; a.style.opacity="0";
+      document.body.appendChild(a); a.select();
+      try{ document.execCommand("copy"); toast("Copiado"); }catch(e){ toast("No se pudo copiar"); }
+      a.remove();
+    }
+  }
+
+  /* ---------- almacenamiento ---------- */
+  function cargar(){
+    try{
+      var d = JSON.parse(localStorage.getItem(LLAVE) || "null");
+      if(d){
+        cfg = Object.assign(JSON.parse(JSON.stringify(cfgBase)), d.cfg||{});
+        if(!Array.isArray(cfg.productos) || !cfg.productos.length) cfg.productos = cfgBase.productos.slice();
+        clientes = Array.isArray(d.clientes) ? d.clientes : [];
+      }
+    }catch(e){ clientes = []; }
+  }
+  function guardar(){
+    try{ localStorage.setItem(LLAVE, JSON.stringify({cfg:cfg, clientes:clientes})); }
+    catch(e){ toast("No se pudo guardar en este navegador"); }
+  }
+  function peso(){
+    try{ return Math.round((localStorage.getItem(LLAVE)||"").length/1024); }catch(e){ return 0; }
+  }
+
+  /* ================= LOGIN ================= */
+  function entrar(){
+    var u = document.getElementById("inUsuario").value.trim();
+    var c = document.getElementById("inClave").value;
+    var err = document.getElementById("errorLogin");
+    if(u.toLowerCase() !== String(cfg.usuario).toLowerCase() || c !== cfg.clave){
+      err.textContent = "Usuario o contraseña incorrectos.";
+      err.classList.remove("oculto");
+      return;
+    }
+    err.classList.add("oculto");
+    try{ sessionStorage.setItem(LLAVE+"-sesion","1"); }catch(e){}
+    mostrarApp();
+  }
+  function mostrarApp(){
+    document.getElementById("pantallaLogin").classList.add("oculto");
+    document.getElementById("app").classList.remove("oculto");
+    document.getElementById("inClave").value = "";
+    pintarTodo();
+  }
+  function salir(){
+    try{ sessionStorage.removeItem(LLAVE+"-sesion"); }catch(e){}
+    document.getElementById("app").classList.add("oculto");
+    document.getElementById("pantallaLogin").classList.remove("oculto");
+    document.getElementById("inClave").value = "";
+  }
+
+  /* ================= NAVEGACIÓN ================= */
+  function ir(vista){
+    document.querySelectorAll(".vista").forEach(function(v){ v.classList.toggle("activa", v.id===vista); });
+    document.querySelectorAll("#menu button").forEach(function(b){
+      if(b.dataset.vista===vista) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current");
+    });
+    if(vista==="vNuevo" && !editandoId) prepararFormulario(null);
+    if(vista==="vConfig") cargarConfig();
+    window.scrollTo({top:0,behavior:"instant"});
+  }
+
+  /* ================= PANEL DE VENTAS ================= */
+  function pintarPanel(){
+    document.getElementById("fechaHoy").textContent = "Hoy es " + bonito(hoy());
+
+    var cuenta = {activa:0, porvencer:0, vencehoy:0, vencida:0};
+    var activo = 0;
+    clientes.forEach(function(c){
+      var e = estado(restantes(c));
+      cuenta[e]++;
+      if(e!=="vencida") activo += Number(c.precio||0);
+    });
+
+    var mesActual = new Date().getMonth(), anioActual = new Date().getFullYear();
+    var delMes = clientes.filter(function(c){
+      var f = deISO(c.ultimoCobro || c.inicio);
+      return f.getMonth()===mesActual && f.getFullYear()===anioActual;
+    });
+    var ingresoMes = delMes.reduce(function(s,c){ return s + Number(c.precio||0); },0);
+
+    var k = document.getElementById("kpis");
+    k.innerHTML =
+      tarjetaKpi("", "Clientes registrados", clientes.length, "en total") +
+      tarjetaKpi("v", ROTULOS.activa, cuenta.activa, "al día") +
+      tarjetaKpi("a", "Por vencer", cuenta.porvencer + cuenta.vencehoy, "en "+cfg.anticipacion+" días o menos") +
+      tarjetaKpi("r", ROTULOS.vencida, cuenta.vencida, "necesitan renovar") +
+      tarjetaKpi("n", "Cobrado este mes", dinero(ingresoMes), delMes.length+" movimientos") +
+      tarjetaKpi("", "Cartera activa", dinero(activo), "por ciclo");
+
+    // avisos
+    var zona = document.getElementById("avisosPanel"); zona.innerHTML = "";
+    var urgentes = clientes.filter(function(c){ var d=restantes(c); return d>=0 && d<=Number(cfg.anticipacion); })
+                           .sort(function(a,b){ return restantes(a)-restantes(b); });
+    var vencidos = clientes.filter(function(c){ return restantes(c)<0; });
+    if(vencidos.length) zona.appendChild(bloqueAviso("roj",
+      vencidos.length+(vencidos.length===1?" cuenta vencida":" cuentas vencidas"),
+      vencidos.slice(0,4).map(function(c){ return c.nombre; }).join(" · ") + (vencidos.length>4?" y "+(vencidos.length-4)+" más":"")));
+    if(urgentes.length) zona.appendChild(bloqueAviso("amb",
+      urgentes.length+(urgentes.length===1?" cuenta por vencer":" cuentas por vencer"),
+      urgentes.slice(0,4).map(function(c){ var d=restantes(c); return c.nombre+" ("+(d===0?"hoy":d+(d===1?" día":" días"))+")"; }).join(" · ") + (urgentes.length>4?" y "+(urgentes.length-4)+" más":"")));
+
+    // próximas renovaciones
+    var prox = clientes.slice().sort(function(a,b){ return restantes(a)-restantes(b); }).slice(0,6);
+    var cp = document.getElementById("proximos");
+    cp.innerHTML = "";
+    if(!prox.length){ cp.innerHTML = "<p style='color:var(--suave);margin:0'>Aún no hay clientes registrados.</p>"; }
+    prox.forEach(function(c){
+      var d = restantes(c), e = estado(d), p = producto(c.productoId);
+      var f = document.createElement("div");
+      f.className = "fila";
+      f.innerHTML =
+        "<span class='logo-prod' style='width:32px;height:32px;border-radius:9px;font-size:12px;"+fondoProd(p)+"'>"+contenidoProd(p)+"</span>"+
+        "<div class='nom'>"+esc(c.nombre)+"<small>"+esc(p.nombre)+" · vence "+bonito(termino(c))+"</small></div>"+
+        "<span class='num' style='font-family:Outfit;font-weight:700;color:"+COLORES[e]+"'>"+(d<0? d : "+"+d)+"</span>";
+      cp.appendChild(f);
+    });
+
+    // por producto
+    var conteo = {};
+    clientes.forEach(function(c){
+      var n = producto(c.productoId).nombre;
+      conteo[n] = (conteo[n]||0)+1;
+    });
+    var pares = Object.keys(conteo).map(function(n){ return [n,conteo[n]]; }).sort(function(a,b){ return b[1]-a[1]; }).slice(0,8);
+    var maxc = pares.length ? pares[0][1] : 1;
+    var pp = document.getElementById("porProducto");
+    pp.innerHTML = pares.length ? "" : "<p style='color:var(--suave);margin:0'>Sin datos todavía.</p>";
+    pares.forEach(function(par){
+      var col = (cfg.productos.filter(function(x){ return x.nombre===par[0]; })[0]||{color:"#7C3AED"}).color;
+      var d = document.createElement("div");
+      d.className = "barra-prod";
+      d.innerHTML = "<span class='nom'>"+esc(par[0])+"</span>"+
+        "<span class='pista'><i style='width:"+(par[1]/maxc*100)+"%;background:"+degradado(col)+"'></i></span>"+
+        "<span class='val num'>"+par[1]+"</span>";
+      pp.appendChild(d);
+    });
+
+    // ingresos por mes
+    var meses = [];
+    for(var i=5;i>=0;i--){
+      var f = new Date(anioActual, mesActual-i, 1);
+      meses.push({m:f.getMonth(), a:f.getFullYear(), t:0});
+    }
+    clientes.forEach(function(c){
+      var f = deISO(c.ultimoCobro || c.inicio);
+      meses.forEach(function(x){ if(x.m===f.getMonth() && x.a===f.getFullYear()) x.t += Number(c.precio||0); });
+    });
+    var maxm = Math.max.apply(null, meses.map(function(x){ return x.t; }).concat([1]));
+    var pm = document.getElementById("porMes"); pm.innerHTML = "";
+    meses.forEach(function(x){
+      var d = document.createElement("div");
+      d.className = "barra-prod";
+      d.innerHTML = "<span class='nom'>"+MESES[x.m]+" "+String(x.a).slice(2)+"</span>"+
+        "<span class='pista'><i style='width:"+(x.t/maxm*100)+"%;background:linear-gradient(90deg,#7C3AED,#EC4899)'></i></span>"+
+        "<span class='val num' style='width:74px'>"+dinero(x.t)+"</span>";
+      pm.appendChild(d);
+    });
+  }
+  function tarjetaKpi(clase, rot, cif, pie){
+    return "<div class='kpi "+clase+"'><span class='rot'>"+rot+"</span><span class='cif num'>"+cif+"</span><div class='pie'>"+pie+"</div></div>";
+  }
+  function bloqueAviso(clase, titulo, detalle){
+    var d = document.createElement("div");
+    d.className = "aviso "+clase;
+    d.innerHTML = "<div><b>"+esc(titulo)+"</b>"+esc(detalle)+"</div>";
+    return d;
+  }
+
+  /* ================= CLIENTES ================= */
+  function pintarPastillas(){
+    var cuenta = {activa:0, porvencer:0, vencehoy:0, vencida:0};
+    clientes.forEach(function(c){ cuenta[estado(restantes(c))]++; });
+    var z = document.getElementById("pastillas"); z.innerHTML = "";
+    function p(txt, val, color, n){
+      var b = document.createElement("button");
+      b.className = "pastilla"; b.type = "button";
+      b.setAttribute("aria-pressed", filtroEstado===val?"true":"false");
+      b.innerHTML = (color?"<span class='punto' style='background:"+color+"'></span>":"") + txt + " <span class='num' style='opacity:.7'>"+n+"</span>";
+      b.onclick = function(){ filtroEstado = (filtroEstado===val?"":val); pintarPastillas(); pintarClientes(); };
+      z.appendChild(b);
+    }
+    p("Todos","",null,clientes.length);
+    ["vencida","vencehoy","porvencer","activa"].forEach(function(k){ p(ROTULOS[k], k, COLORES[k], cuenta[k]); });
+  }
+
+  function pintarSelectProductos(){
+    var f = document.getElementById("filtroProducto"), actual = f.value;
+    f.innerHTML = "<option value=''>Todos los productos</option>";
+    var s = document.getElementById("fProducto"), sa = s.value;
+    s.innerHTML = "";
+    cfg.productos.forEach(function(p){
+      var o1 = document.createElement("option"); o1.value = p.id; o1.textContent = p.nombre; f.appendChild(o1);
+      var o2 = document.createElement("option"); o2.value = p.id; o2.textContent = p.nombre; s.appendChild(o2);
+    });
+    if(actual) f.value = actual;
+    if(sa) s.value = sa;
+  }
+
+  function pintarClientes(){
+    var q = document.getElementById("buscar").value.trim().toLowerCase();
+    var fp = document.getElementById("filtroProducto").value;
+    var ord = document.getElementById("orden").value;
+
+    var lista = clientes.filter(function(c){
+      if(filtroEstado && estado(restantes(c))!==filtroEstado) return false;
+      if(fp && c.productoId!==fp) return false;
+      if(q){
+        var heno = (c.nombre+" "+c.codigo+" "+(c.celular||"")+" "+(c.email||"")+" "+producto(c.productoId).nombre).toLowerCase();
+        if(heno.indexOf(q)===-1) return false;
+      }
+      return true;
+    });
+    lista.sort(function(a,b){
+      if(ord==="nombre") return a.nombre.localeCompare(b.nombre,"es");
+      if(ord==="reciente") return (b.creado||0)-(a.creado||0);
+      return restantes(a)-restantes(b);
+    });
+
+    document.getElementById("conteoClientes").textContent =
+      lista.length + (lista.length===1?" cliente":" clientes") + (clientes.length!==lista.length ? " de "+clientes.length : "");
+
+    var z = document.getElementById("listaClientes");
+    z.innerHTML = "";
+    if(!lista.length){
+      z.style.display = "block";
+      z.innerHTML = clientes.length
+        ? "<div class='vacio'><h3>Ningún cliente coincide</h3><p>Cambia la búsqueda o quita los filtros.</p></div>"
+        : "<div class='vacio'><h3>Todavía no hay clientes</h3><p>Registra el primero desde \"Agregar cliente\".</p></div>";
+      return;
+    }
+    z.style.display = "";
+    lista.forEach(function(c){ z.appendChild(fichaCliente(c)); });
+  }
+
+  function fichaCliente(c){
+    var d = restantes(c), e = estado(d), p = producto(c.productoId);
+    var art = document.createElement("article");
+    art.className = "cliente est-"+e;
+
+    var valor, rot;
+    if(e==="vencida"){ valor = Math.abs(d); rot = (valor===1?"día vencida":"días vencida"); }
+    else if(e==="vencehoy"){ valor = 0; rot = "vence hoy"; }
+    else { valor = d; rot = (d===1?"día restante":"días restantes"); }
+
+    var pct = Math.max(0, Math.min(100, (d / Number(c.dias)) * 100));
+
+    var cred = "";
+    function filaCred(et, val, oculto){
+      if(!val) return "";
+      return "<div class='cred-fila'><span class='et'>"+et+"</span>"+
+             "<code data-real='"+esc(val)+"'>"+(oculto ? "••••••••" : esc(val))+"</code>"+
+             "<button data-copiar='"+esc(val)+"'>Copiar</button></div>";
+    }
+    cred += filaCred("Correo", c.email, false);
+    cred += filaCred("Clave", c.clave, true);
+    cred += filaCred("Perfil", c.perfil, false);
+    cred += filaCred("PIN", c.pin, true);
+
+    art.innerHTML =
+      "<div class='cli-top'>"+
+        "<span class='logo-prod' style='"+fondoProd(p)+"'>"+contenidoProd(p)+"</span>"+
+        "<div style='min-width:0'>"+
+          "<div class='cli-id'>"+esc(c.codigo)+"</div>"+
+          "<div class='cli-nombre'>"+esc(c.nombre)+"</div>"+
+          "<div class='cli-prod'>"+esc(p.nombre)+(c.precio?" · "+dinero(c.precio):"")+(c.renovaciones?" · "+c.renovaciones+" renov.":"")+"</div>"+
+        "</div>"+
+        "<div class='cuenta-atras'><span class='d num'>"+valor+"</span><span class='t'>"+rot+"</span></div>"+
+      "</div>"+
+      "<div><div class='progreso'><i style='width:"+pct+"%'></i></div>"+
+      "<div class='fechas'><span>Inicio "+bonito(deISO(c.inicio))+"</span><span>Término "+bonito(termino(c))+"</span></div></div>"+
+      (cred ? "<div class='credenciales'>"+cred+"</div>" : "")+
+      "<div class='acciones'>"+
+        (c.celular ? "<button class='btn-mini wa' data-a='wa'>WhatsApp</button>" : "")+
+        "<button class='btn-mini' data-a='ver'>Ver claves</button>"+
+        "<button class='btn-mini' data-a='renovar'>Renovar</button>"+
+        "<button class='btn-mini' data-a='editar'>Editar</button>"+
+        "<button class='btn-mini peligro' data-a='borrar'>Eliminar</button>"+
+      "</div>"+
+      (c.nota ? "<div style='font-size:12.5px;color:var(--suave)'>"+esc(c.nota)+"</div>" : "");
+
+    art.querySelectorAll("[data-copiar]").forEach(function(b){
+      b.onclick = function(){ copiar(b.dataset.copiar); };
+    });
+    var verBtn = art.querySelector("[data-a='ver']");
+    var visible = false;
+    verBtn.onclick = function(){
+      visible = !visible;
+      art.querySelectorAll("code[data-real]").forEach(function(code, i){
+        var esSecreto = (code.parentNode.querySelector(".et").textContent === "Clave" || code.parentNode.querySelector(".et").textContent === "PIN");
+        if(!esSecreto) return;
+        code.textContent = visible ? code.dataset.real : "••••••••";
+      });
+      verBtn.textContent = visible ? "Ocultar claves" : "Ver claves";
+    };
+    var wa = art.querySelector("[data-a='wa']");
+    if(wa) wa.onclick = function(){
+      var url = "https://wa.me/"+telefono(c.celular)+"?text="+encodeURIComponent(mensaje(c,d));
+      window.open(url,"_blank","noopener");
+    };
+    art.querySelector("[data-a='renovar']").onclick = function(){ renovar(c); };
+    art.querySelector("[data-a='editar']").onclick = function(){ prepararFormulario(c); ir("vNuevo"); };
+    art.querySelector("[data-a='borrar']").onclick = function(){
+      if(!confirm("¿Eliminar a "+c.nombre+" ("+c.codigo+")? No se puede deshacer.")) return;
+      clientes = clientes.filter(function(x){ return x.id!==c.id; });
+      guardar(); pintarTodo(); toast("Cliente eliminado");
+    };
+    return art;
+  }
+
+  function telefono(cel){
+    var n = digitos(cel);
+    if(n.length === 9) n = digitos(cfg.pais)+n;
+    return n;
+  }
+  function mensaje(c,d){
+    var p = producto(c.productoId);
+    var plantilla = d < 0 ? cfg.msgVencida : cfg.msgPorVencer;
+    var primero = String(c.nombre||"").split(",")[1] || String(c.nombre||"").split(" ")[0] || "";
+    return plantilla
+      .replace(/\{nombre\}/g, primero.trim() || c.nombre)
+      .replace(/\{producto\}/g, p.nombre)
+      .replace(/\{dias\}/g, d===0 ? "hoy" : Math.abs(d)+(Math.abs(d)===1?" día":" días"))
+      .replace(/\{fecha\}/g, bonito(termino(c)))
+      .replace(/\{precio\}/g, dinero(c.precio));
+  }
+  function renovar(c){
+    var d = restantes(c);
+    var base = d >= 0 ? termino(c) : hoy();
+    var texto = d >= 0
+      ? "La renovación empieza el "+bonito(base)+", cuando termina el ciclo actual."
+      : "La cuenta ya venció, así que la renovación empieza hoy: "+bonito(base)+".";
+    if(!confirm("Renovar "+producto(c.productoId).nombre+" de "+c.nombre+" por "+c.dias+" días.\n\n"+texto)) return;
+    c.inicio = aISO(base);
+    c.ultimoCobro = aISO(hoy());
+    c.renovaciones = (c.renovaciones||0)+1;
+    guardar(); pintarTodo();
+    toast("Renovado hasta el "+bonito(termino(c)));
+  }
+
+  /* ================= FORMULARIO ================= */
+  function nuevoCodigo(){
+    var mayor = 0;
+    clientes.forEach(function(c){
+      var m = /(\d+)\s*$/.exec(c.codigo||"");
+      if(m) mayor = Math.max(mayor, +m[1]);
+    });
+    return "HS-" + String(mayor+1).padStart(4,"0");
+  }
+  function prepararFormulario(c){
+    editandoId = c ? c.id : null;
+    document.getElementById("tituloForm").textContent = c ? "Editar cliente" : "Agregar cliente";
+    document.getElementById("btnGuardarCliente").textContent = c ? "Guardar cambios" : "Guardar cliente";
+    document.getElementById("fCodigo").value  = c ? c.codigo : nuevoCodigo();
+    document.getElementById("fNombre").value  = c ? c.nombre : "";
+    document.getElementById("fCelular").value = c ? (c.celular||"") : "";
+    document.getElementById("fEmail").value   = c ? (c.email||"") : "";
+    document.getElementById("fClave").value   = c ? (c.clave||"") : "";
+    document.getElementById("fPerfil").value  = c ? (c.perfil||"") : "";
+    document.getElementById("fPin").value     = c ? (c.pin||"") : "";
+    document.getElementById("fPrecio").value  = c ? (c.precio||"") : "";
+    document.getElementById("fInicio").value  = c ? c.inicio : aISO(hoy());
+    document.getElementById("fDias").value    = c ? c.dias : cfg.diasDefecto;
+    document.getElementById("fNota").value    = c ? (c.nota||"") : "";
+    pintarSelectProductos();
+    if(c) document.getElementById("fProducto").value = c.productoId;
+    else if(cfg.productos.length){
+      document.getElementById("fProducto").value = cfg.productos[0].id;
+      aplicarProducto();
+    }
+    ["c-codigo","c-nombre","c-producto","c-inicio"].forEach(function(id){
+      document.getElementById(id).classList.remove("error");
+    });
+    actualizarPrevia();
+  }
+  function aplicarProducto(){
+    var p = producto(document.getElementById("fProducto").value);
+    if(editandoId) return;
+    document.getElementById("fDias").value = p.dias || cfg.diasDefecto;
+    if(p.precio) document.getElementById("fPrecio").value = p.precio;
+    actualizarPrevia();
+  }
+  function actualizarPrevia(){
+    var ini = document.getElementById("fInicio").value;
+    var dias = Number(document.getElementById("fDias").value) || 0;
+    var caja = document.getElementById("previa");
+    if(!ini || !dias){
+      document.getElementById("fTermino").value = "—";
+      caja.innerHTML = "<div>Completa la fecha de inicio y la duración<b>—</b></div>";
+      return;
+    }
+    var falso = {inicio:ini, dias:dias};
+    var t = termino(falso), d = restantes(falso), e = estado(d);
+    document.getElementById("fTermino").value = bonito(t);
+    var estadoTxt = d < 0 ? "Ya vencida hace "+Math.abs(d)+(Math.abs(d)===1?" día":" días")
+                  : d === 0 ? "Vence hoy"
+                  : d <= Number(cfg.anticipacion) ? "Por vencer" : "Activa";
+    caja.innerHTML =
+      "<div>Fecha de término<b>"+bonito(t)+"</b></div>"+
+      "<div>Días restantes<b class='num' style='color:"+COLORES[e]+"'>"+(d<0?0:d)+"</b></div>"+
+      "<div>Estado<b style='color:"+COLORES[e]+"'>"+estadoTxt+"</b></div>"+
+      "<div>Aviso de renovación<b>"+bonito(sumar(t, -Number(cfg.anticipacion)))+"</b></div>";
+  }
+  function guardarCliente(){
+    var codigo = document.getElementById("fCodigo").value.trim();
+    var nombre = document.getElementById("fNombre").value.trim();
+    var prodId = document.getElementById("fProducto").value;
+    var inicio = document.getElementById("fInicio").value;
+    var dias = Number(document.getElementById("fDias").value) || cfg.diasDefecto;
+
+    var ok = true;
+    function marcar(id, malo){ document.getElementById(id).classList.toggle("error", malo); if(malo) ok = false; }
+    marcar("c-codigo", !codigo);
+    marcar("c-nombre", !nombre);
+    marcar("c-producto", !prodId);
+    marcar("c-inicio", !inicio);
+    if(!ok){ toast("Revisa los campos marcados"); return; }
+
+    var repetido = clientes.some(function(x){
+      return String(x.codigo).toLowerCase()===codigo.toLowerCase() && x.id!==editandoId;
+    });
+    if(repetido && !confirm("Ya existe otro cliente con el ID "+codigo+". ¿Guardar de todos modos?")) return;
+
+    var datos = {
+      codigo:codigo, nombre:nombre, productoId:prodId,
+      celular:digitos(document.getElementById("fCelular").value),
+      email:document.getElementById("fEmail").value.trim(),
+      clave:document.getElementById("fClave").value.trim(),
+      perfil:document.getElementById("fPerfil").value.trim(),
+      pin:document.getElementById("fPin").value.trim(),
+      precio:Number(document.getElementById("fPrecio").value)||0,
+      inicio:inicio, dias:dias,
+      nota:document.getElementById("fNota").value.trim()
+    };
+
+    if(editandoId){
+      Object.assign(clientes.filter(function(x){ return x.id===editandoId; })[0], datos);
+      toast("Cambios guardados");
+    }else{
+      datos.id = "c"+Date.now()+Math.floor(Math.random()*1000);
+      datos.renovaciones = 0;
+      datos.ultimoCobro = inicio;
+      datos.creado = Date.now();
+      clientes.push(datos);
+      toast("Cliente registrado");
+    }
+    editandoId = null;
+    guardar(); pintarTodo(); ir("vClientes");
+  }
+
+  /* ================= CONFIGURACIÓN ================= */
+  document.querySelectorAll(".pestana").forEach(function(b){
+    b.onclick = function(){
+      document.querySelectorAll(".pestana").forEach(function(x){ x.setAttribute("aria-selected","false"); });
+      document.querySelectorAll(".hoja").forEach(function(x){ x.classList.remove("activa"); });
+      b.setAttribute("aria-selected","true");
+      document.getElementById(b.dataset.hoja).classList.add("activa");
+    };
+  });
+
+  document.querySelectorAll("[data-cfg]").forEach(function(el){
+    el.addEventListener("input", function(){
+      var v = el.value;
+      if(el.type==="number") v = Number(v)||1;
+      cfg[el.dataset.cfg] = v;
+      guardar(); pintarMarca(); pintarPanel(); pintarClientes();
+    });
+  });
+
+  function cargarConfig(){
+    document.querySelectorAll("[data-cfg]").forEach(function(el){
+      var v = cfg[el.dataset.cfg];
+      el.value = v==null ? "" : v;
+    });
+    document.getElementById("cUsuario").value = cfg.usuario;
+    document.getElementById("cClaveNueva").value = "";
+    document.getElementById("notaEspacio").textContent =
+      "Tu sistema ocupa unos "+peso()+" KB en este navegador. Descarga el respaldo cada cierto tiempo: si limpias los datos de navegación, la información se borra.";
+    pintarVistaPie();
+    pintarVistaLogo();
+    pintarListaProductos();
+  }
+  function pintarVistaPie(){
+    document.getElementById("vistaPie").textContent = textoPie();
+  }
+  function textoPie(){
+    var partes = [cfg.plataforma + " © " + new Date().getFullYear(), cfg.derechos];
+    if(cfg.propietario) partes.push(cfg.propietario);
+    if(cfg.telefono) partes.push("Cel. " + cfg.telefono);
+    return partes.filter(Boolean).join(" · ");
+  }
+
+  function pintarListaProductos(){
+    var z = document.getElementById("listaProductos"); z.innerHTML = "";
+    if(!cfg.productos.length){
+      z.innerHTML = "<div style='padding:20px;text-align:center;color:var(--suave)'>Sin productos. Agrega el primero abajo.</div>";
+      return;
+    }
+    cfg.productos.forEach(function(p,i){
+      var usados = clientes.filter(function(c){ return c.productoId===p.id; }).length;
+      var f = document.createElement("div");
+      f.className = "fila";
+      f.innerHTML =
+        "<span class='logo-prod' style='width:32px;height:32px;border-radius:9px;font-size:12px;"+fondoProd(p)+"'>"+contenidoProd(p)+"</span>"+
+        "<div class='nom'>"+esc(p.nombre)+"<small>"+p.dias+" días · "+dinero(p.precio)+" · "+usados+" cliente"+(usados===1?"":"s")+"</small></div>"+
+        "<button class='btn-mini' data-a='ed'>Editar</button>"+
+        "<button class='btn-mini peligro' data-a='del'>Borrar</button>";
+      f.querySelector("[data-a='ed']").onclick = function(){
+        document.getElementById("pNombre").value = p.nombre;
+        document.getElementById("pDias").value = p.dias;
+        document.getElementById("pPrecio").value = p.precio;
+        document.getElementById("pColor").value = p.color;
+        logoTemp = p.logo || "";
+        pintarVistaLogo();
+        document.getElementById("btnGuardarProducto").textContent = "Guardar cambios";
+        document.getElementById("btnGuardarProducto").dataset.editando = p.id;
+        document.getElementById("pNombre").focus();
+      };
+      f.querySelector("[data-a='del']").onclick = function(){
+        if(usados){ toast("Tiene "+usados+" cliente(s). Cámbialos de producto primero."); return; }
+        if(!confirm("¿Borrar el producto \""+p.nombre+"\"?")) return;
+        cfg.productos.splice(i,1);
+        guardar(); pintarListaProductos(); pintarSelectProductos(); pintarPanel();
+      };
+      z.appendChild(f);
+    });
+  }
+  function pintarVistaLogo(){
+    var v = document.getElementById("vistaLogo");
+    var color = document.getElementById("pColor").value || "#7C3AED";
+    var nombre = document.getElementById("pNombre").value || "";
+    if(logoTemp){
+      v.style.background = "#0F0D1C";
+      v.innerHTML = "<img src='"+logoTemp+"' alt='Logo del producto'>";
+    }else{
+      v.style.background = degradado(color);
+      v.innerHTML = esc(iniciales(nombre || "?"));
+    }
+  }
+
+  function procesarLogo(archivo){
+    var lector = new FileReader();
+    lector.onload = function(ev){
+      var im = new Image();
+      im.onload = function(){
+        var lado = Math.min(im.width, im.height);
+        var cv = document.createElement("canvas");
+        cv.width = 128; cv.height = 128;
+        var ctx = cv.getContext("2d");
+        ctx.drawImage(im, (im.width-lado)/2, (im.height-lado)/2, lado, lado, 0, 0, 128, 128);
+        logoTemp = cv.toDataURL("image/png");
+        pintarVistaLogo();
+        toast("Logo listo · ahora guarda el producto");
+      };
+      im.onerror = function(){ toast("No se pudo leer esa imagen"); };
+      im.src = ev.target.result;
+    };
+    lector.readAsDataURL(archivo);
+  }
+
+  function guardarProducto(){
+    var btn = document.getElementById("btnGuardarProducto");
+    var nombre = document.getElementById("pNombre").value.trim();
+    if(!nombre){ toast("Escribe el nombre del producto"); return; }
+    var datos = {
+      nombre:nombre,
+      dias:Number(document.getElementById("pDias").value)||30,
+      precio:Number(document.getElementById("pPrecio").value)||0,
+      color:document.getElementById("pColor").value,
+      logo:logoTemp
+    };
+    if(btn.dataset.editando){
+      Object.assign(producto(btn.dataset.editando), datos);
+      toast("Producto actualizado");
+    }else{
+      datos.id = "s"+Date.now();
+      cfg.productos.push(datos);
+      toast("Producto agregado");
+    }
+    delete btn.dataset.editando;
+    btn.textContent = "Agregar producto";
+    logoTemp = "";
+    pintarVistaLogo();
+    document.getElementById("pNombre").value = "";
+    document.getElementById("pDias").value = 30;
+    document.getElementById("pPrecio").value = "";
+    guardar(); pintarListaProductos(); pintarSelectProductos(); pintarPanel(); pintarClientes();
+  }
+
+  /* ================= RESPALDO ================= */
+  function bajar(nombre, contenido, tipo){
+    var b = new Blob([contenido], {type:tipo});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(b); a.download = nombre;
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 400);
+  }
+  function exportarCSV(){
+    if(!clientes.length){ toast("No hay clientes que exportar"); return; }
+    var cab = ["ID","Apellidos y nombres","Producto","Celular","Email","Clave","Perfil","PIN","Inicio","Dias","Termino","Dias restantes","Estado","Precio","Renovaciones","Nota"];
+    var filas = clientes.map(function(c){
+      var d = restantes(c);
+      return [c.codigo,c.nombre,producto(c.productoId).nombre,c.celular||"",c.email||"",c.clave||"",c.perfil||"",c.pin||"",
+              c.inicio,c.dias,aISO(termino(c)),d,ROTULOS[estado(d)],c.precio||0,c.renovaciones||0,c.nota||""];
+    });
+    var csv = [cab].concat(filas).map(function(f){
+      return f.map(function(v){ return '"'+String(v).replace(/"/g,'""')+'"'; }).join(",");
+    }).join("\r\n");
+    bajar("clientes-"+aISO(hoy())+".csv", "\uFEFF"+csv, "text/csv;charset=utf-8");
+    toast("CSV descargado");
+  }
+  function ejemplos(){
+    var h = hoy();
+    function menos(n){ return aISO(sumar(h,-n)); }
+    return [
+      {id:"e1",codigo:"HS-0001",nombre:"Quispe Ramos, Ana María",productoId:"s1",celular:"987654321",email:"cuenta1@correo.com",clave:"Netflix2026",perfil:"Perfil 2",pin:"1234",precio:12,inicio:menos(3),dias:30,nota:"Pagó por Yape",renovaciones:2,ultimoCobro:menos(3),creado:Date.now()-4000},
+      {id:"e2",codigo:"HS-0002",nombre:"Huamán Ccahuana, Luis",productoId:"s2",celular:"912345678",email:"cuenta2@correo.com",clave:"Disney*88",perfil:"Perfil 1",pin:"4455",precio:8,inicio:menos(28),dias:30,nota:"",renovaciones:0,ultimoCobro:menos(28),creado:Date.now()-3000},
+      {id:"e3",codigo:"HS-0003",nombre:"Palomino Vega, Rosa",productoId:"s5",celular:"956781234",email:"cuenta3@correo.com",clave:"Spoti2026",perfil:"",pin:"",precio:9,inicio:menos(30),dias:30,nota:"Preguntar si renueva",renovaciones:1,ultimoCobro:menos(30),creado:Date.now()-2000},
+      {id:"e4",codigo:"HS-0004",nombre:"Chávez Aliaga, Marco",productoId:"s3",celular:"934567812",email:"cuenta4@correo.com",clave:"MaxPlat9",perfil:"Perfil 3",pin:"7788",precio:6,inicio:menos(35),dias:30,nota:"",renovaciones:0,ultimoCobro:menos(35),creado:Date.now()-1000}
+    ];
+  }
+
+  /* ================= PINTADO GENERAL ================= */
+  function pintarMarca(){
+    document.getElementById("marcaNombre").textContent = cfg.plataforma;
+    document.getElementById("marcaLema").textContent = cfg.lema;
+    document.getElementById("loginTitulo").textContent = cfg.plataforma;
+    document.getElementById("nombreUsuario").textContent = cfg.usuario;
+    document.getElementById("avatar").textContent = String(cfg.usuario||"A").slice(0,1).toUpperCase();
+    document.getElementById("pieSistema").innerHTML = "<b>"+esc(cfg.plataforma)+"</b> © "+new Date().getFullYear()+" · "+
+      esc(cfg.derechos)+(cfg.propietario?" · "+esc(cfg.propietario):"")+(cfg.telefono?" · Cel. "+esc(cfg.telefono):"");
+    document.title = cfg.plataforma + " — Control de cuentas de streaming";
+    var pista = document.getElementById("pistaLogin");
+    if(cfg.usuario!=="admin" || cfg.clave!=="hsystem") pista.classList.add("oculto");
+  }
+  function pintarTodo(){
+    pintarMarca(); pintarSelectProductos(); pintarPanel(); pintarPastillas(); pintarClientes();
+  }
+
+  /* ================= ARRANQUE ================= */
+  cargar();
+  pintarMarca();
+
+  var sesion = false;
+  try{ sesion = sessionStorage.getItem(LLAVE+"-sesion")==="1"; }catch(e){}
+  if(sesion) mostrarApp();
+
+  document.getElementById("btnEntrar").onclick = entrar;
+  ["inUsuario","inClave"].forEach(function(id){
+    document.getElementById(id).addEventListener("keydown", function(e){ if(e.key==="Enter") entrar(); });
+  });
+  document.getElementById("btnSalir").onclick = salir;
+
+  document.getElementById("menu").addEventListener("click", function(e){
+    if(e.target.dataset.vista) ir(e.target.dataset.vista);
+  });
+  document.querySelectorAll("[data-ir]").forEach(function(b){
+    b.onclick = function(){ editandoId = null; ir(b.dataset.ir); };
+  });
+
+  ["buscar","filtroProducto","orden"].forEach(function(id){
+    document.getElementById(id).addEventListener("input", pintarClientes);
+  });
+  document.getElementById("btnCSV").onclick = exportarCSV;
+
+  document.getElementById("fProducto").addEventListener("change", aplicarProducto);
+  ["fInicio","fDias"].forEach(function(id){
+    document.getElementById(id).addEventListener("input", actualizarPrevia);
+  });
+  document.getElementById("btnGuardarCliente").onclick = guardarCliente;
+  document.getElementById("btnCancelarForm").onclick = function(){ editandoId = null; ir("vClientes"); };
+
+  document.getElementById("btnGuardarProducto").onclick = guardarProducto;
+  document.getElementById("btnSubirLogo").onclick = function(){ document.getElementById("archivoLogo").click(); };
+  document.getElementById("btnQuitarLogo").onclick = function(){ logoTemp = ""; pintarVistaLogo(); };
+  document.getElementById("archivoLogo").onchange = function(e){
+    var f = e.target.files[0];
+    if(f) procesarLogo(f);
+    e.target.value = "";
+  };
+  ["pNombre","pColor"].forEach(function(id){
+    document.getElementById(id).addEventListener("input", function(){ if(!logoTemp) pintarVistaLogo(); });
+  });
+
+  document.getElementById("btnGuardarAcceso").onclick = function(){
+    var u = document.getElementById("cUsuario").value.trim();
+    var c = document.getElementById("cClaveNueva").value;
+    if(!u){ toast("El usuario no puede quedar vacío"); return; }
+    cfg.usuario = u;
+    if(c) cfg.clave = c;
+    guardar(); pintarMarca();
+    document.getElementById("cClaveNueva").value = "";
+    toast("Acceso actualizado");
+  };
+
+  document.getElementById("btnRespaldo").onclick = function(){
+    bajar("hsystem-"+aISO(hoy())+".json", JSON.stringify({cfg:cfg, clientes:clientes}, null, 2), "application/json");
+    toast("Respaldo descargado");
+  };
+  document.getElementById("btnImportar").onclick = function(){ document.getElementById("archivo").click(); };
+  document.getElementById("archivo").onchange = function(e){
+    var f = e.target.files[0]; if(!f) return;
+    var lector = new FileReader();
+    lector.onload = function(ev){
+      try{
+        var d = JSON.parse(ev.target.result);
+        if(!d || !Array.isArray(d.clientes)) throw new Error("formato");
+        clientes = d.clientes;
+        cfg = Object.assign(JSON.parse(JSON.stringify(cfgBase)), d.cfg||{});
+        guardar(); pintarTodo(); cargarConfig(); toast("Respaldo importado");
+      }catch(err){ toast("El archivo no tiene el formato del respaldo"); }
+      e.target.value = "";
+    };
+    lector.readAsText(f);
+  };
+  document.getElementById("btnEjemplos").onclick = function(){
+    if(clientes.length && !confirm("Se agregarán 4 clientes de ejemplo a tu lista. ¿Continuar?")) return;
+    clientes = clientes.concat(ejemplos());
+    guardar(); pintarTodo(); toast("Ejemplos cargados");
+  };
+  document.getElementById("btnBorrarTodo").onclick = function(){
+    if(!confirm("Esto borra TODOS los clientes y vuelve la configuración al inicio. ¿Seguro?")) return;
+    if(!confirm("Última confirmación: se perderá todo lo registrado.")) return;
+    clientes = [];
+    cfg = JSON.parse(JSON.stringify(cfgBase));
+    guardar(); pintarTodo(); cargarConfig(); toast("Datos borrados");
+  };
+})();
+</script>
+</body>
+</html>
